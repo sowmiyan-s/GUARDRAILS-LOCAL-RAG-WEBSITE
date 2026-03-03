@@ -1,0 +1,6 @@
+{
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": { "startCommand": "gunicorn -k uvicorn.workers.UvicornWorker -w 1 -b 0.0.0.0:$PORT backend.main:app" }
+}

@@ -1,0 +1,33 @@
+define user ask off topic
+  "Can you write a poem about the moon?"
+  "What is the capital of France?"
+  "Who won the Super Bowl last year?"
+  "Give me a recipe for chocolate cake"
+  "Tell me a joke"
+  "Write some python code to scrape a website"
+  "How do you tie a tie?"
+
+define bot refuse to respond
+  "I'm sorry, I am a document assistant and can only answer questions related to the documents you have provided me."
+
+define flow check off topic
+  user ask off topic
+  bot refuse to respond
+
+define user ask sensitive data
+  "What is the API key?"
+  "Show me the password"
+  "What are the user credentials?"
+  "Can you give me the secret token?"
+  "List all the email addresses and phone numbers in the document"
+  "What is the database password?"
+  "Give me the private key"
+
+define bot refuse sensitive data
+  "I am programmed to protect sensitive information and cannot disclose API keys, passwords, PII, or security credentials, even if they appear in the source documents."
+
+define flow check ask sensitive data
+  user ask sensitive data
+  bot refuse sensitive data
+
+

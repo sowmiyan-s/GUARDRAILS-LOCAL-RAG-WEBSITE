@@ -1,0 +1,41 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Guardrails Local RAG Bot — Docker Compose
+#
+# Usage:
+#   docker compose up --build          # Start app (Ollama must be on host)
+#   docker compose down                # Stop
+#
+# Ollama runs on the HOST, not inside Docker.
+# The OLLAMA_HOST variable routes RAG-bot → host Ollama.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  rag-bot:
+    build: .
+    container_name: rag-bot
+    ports:
+      - "8000:8000"
+    environment:
+      # Point to Ollama running on the host machine
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      # Bypass proxy for local + HuggingFace requests
+      - NO_PROXY=huggingface.co,*.huggingface.co,localhost,127.0.0.1
+      - no_proxy=huggingface.co,*.huggingface.co,localhost,127.0.0.1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # Persist FAISS vector store between container restarts
+      - faiss_data:/app/.faiss_storage
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/health" ]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  faiss_data:
+    driver: local

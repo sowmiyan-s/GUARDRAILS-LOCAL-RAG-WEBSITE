@@ -1,0 +1,332 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" width="900" height="560" font-family="'Segoe UI', Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#080c14"/><stop offset="100%" style="stop-color:#0d1520"/>
+    </linearGradient>
+    <linearGradient id="nv-green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#76b900"/><stop offset="100%" style="stop-color:#5a8f00"/>
+    </linearGradient>
+    <linearGradient id="blue-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a5f"/><stop offset="100%" style="stop-color:#0d2040"/>
+    </linearGradient>
+    <linearGradient id="grey-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a2535"/><stop offset="100%" style="stop-color:#101820"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#76b900"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#60a5fa"/>
+    </marker>
+    <!-- Clip paths for scan lines -->
+    <clipPath id="faiss-clip"><rect x="565" y="90"  width="130" height="70" rx="8"/></clipPath>
+    <clipPath id="ing-clip" ><rect x="30"  y="222" width="140" height="72" rx="8"/></clipPath>
+    <clipPath id="outg-clip"><rect x="790" y="222" width="80"  height="72" rx="8"/></clipPath>
+    <!-- animateMotion paths -->
+    <path id="mp-faiss-ret" d="M630,160 Q630,230 360,258"/>
+    <path id="mp-out-ui"    d="M830,294 Q830,313 750,340"/>
+    <path id="mp-ui-user"   d="M580,371 Q430,430 85,430"/>
+  </defs>
+
+  <style>
+    /* Flowing arrows – dash marches toward arrowhead */
+    .farrow { stroke-dasharray:8 5; animation:fdash .9s linear infinite; }
+    .fcurve { animation:fdash 1.2s linear infinite; }
+    @keyframes fdash { from{stroke-dashoffset:13} to{stroke-dashoffset:0} }
+
+    /* Box fade-in stagger */
+    @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+    .bx1{animation:fadeUp .5s .1s both} .bx2{animation:fadeUp .5s .3s both}
+    .bx3{animation:fadeUp .5s .5s both} .bx4{animation:fadeUp .5s .7s both}
+    .bx5{animation:fadeUp .5s .9s both} .bx6{animation:fadeUp .5s 1.1s both}
+    .bx7{animation:fadeUp .5s 1.3s both} .bx8{animation:fadeUp .5s 1.5s both}
+    .bx9{animation:fadeUp .5s 1.7s both} .bx10{animation:fadeUp .5s 1.9s both}
+    .bx11{animation:fadeUp .5s 2.1s both}
+
+    /* NeMo guardrail glow pulse */
+    .nemo-glow { animation:nemoGlow 2s ease-in-out infinite; }
+    @keyframes nemoGlow {
+      0%,100%{stroke:#76b900;stroke-opacity:.7;filter:url(#glow)}
+      50%    {stroke:#b3ff40;stroke-opacity:1;filter:url(#glow)}
+    }
+    /* FAISS border */
+    .faiss-b { animation:faissB 2.5s ease-in-out infinite; }
+    @keyframes faissB { 0%,100%{stroke:#1e3a5f} 50%{stroke:#60a5fa} }
+    /* Ollama heartbeat */
+    .ollama-b { animation:ollamaB 2.5s ease-in-out infinite 2s; }
+    @keyframes ollamaB { 0%,100%{stroke:#2a3a4a} 50%{stroke:#76b900} }
+    /* Streamlit breathe */
+    .streamlit-b { animation:streamlitB 3s ease-in-out infinite; }
+    @keyframes streamlitB { 0%,100%{stroke:#1e3a5f} 50%{stroke:#60a5fa} }
+    /* Blocked path blink */
+    .blink { animation:blinkAnim .9s ease-in-out infinite; }
+    @keyframes blinkAnim { 0%,100%{opacity:1} 50%{opacity:.15} }
+    /* NV logo */
+    .nv-breathe { animation:nvB 2.5s ease-in-out infinite; }
+    @keyframes nvB { 0%,100%{opacity:.85} 50%{opacity:1} }
+    /* Secure badge border */
+    .badge-glow { animation:badgeG 2.5s ease-in-out infinite; }
+    @keyframes badgeG { 0%,100%{stroke-opacity:.4} 50%{stroke-opacity:1} }
+    /* Divider march */
+    .divider { animation:divM 2s linear infinite; }
+    @keyframes divM { from{stroke-dashoffset:0} to{stroke-dashoffset:-20} }
+    /* Disk cache dash */
+    .disk-d { animation:diskD 1.2s linear infinite; }
+    @keyframes diskD { from{stroke-dashoffset:0} to{stroke-dashoffset:-14} }
+    /* Sensitivity badge pulses (staggered) */
+    .bp0{animation:bpA 3s ease-in-out infinite 0s}
+    .bp1{animation:bpA 3s ease-in-out infinite .5s}
+    .bp2{animation:bpA 3s ease-in-out infinite 1s}
+    .bp3{animation:bpA 3s ease-in-out infinite 1.5s}
+    @keyframes bpA { 0%,100%{stroke-opacity:.3} 50%{stroke-opacity:.9} }
+    /* Scan line */
+    .scan { animation:scanD var(--sd,1.6s) ease-in-out infinite; }
+    @keyframes scanD {
+      0%  {transform:translateY(0);  opacity:0}
+      10% {opacity:1}
+      90% {opacity:1}
+      100%{transform:translateY(var(--sh,68px)); opacity:0}
+    }
+  </style>
+
+  <!-- Background -->
+  <rect width="900" height="560" fill="url(#bg)" rx="12"/>
+  <rect width="900" height="560" fill="none" stroke="#1e2a3a" stroke-width="1.5" rx="12"/>
+
+  <!-- Title bar -->
+  <rect x="0" y="0" width="900" height="52" fill="#0d1117" rx="12"/>
+  <rect x="0" y="40" width="900" height="12" fill="#0d1117"/>
+  <rect x="0" y="50" width="900" height="2"  fill="#1e2a3a"/>
+
+  <!-- NV Logo -->
+  <rect class="nv-breathe" x="22" y="12" width="28" height="28" fill="url(#nv-green)" rx="5" filter="url(#glow)"/>
+  <text x="36" y="31" text-anchor="middle" fill="#000" font-size="11" font-weight="800" letter-spacing="-0.5">NV</text>
+
+  <!-- Title -->
+  <text x="60" y="27" fill="#f0f6fc" font-size="13" font-weight="700" letter-spacing="2">GUARDRAILS RAG CHAT BOT</text>
+  <text x="60" y="42" fill="#4a6070" font-size="9" letter-spacing="1.5">SYSTEM ARCHITECTURE  ·  GUARDRAILS RAG CHAT BOT  ·  NVIDIA NeMo GUARDRAILS</text>
+
+  <!-- Badge top right -->
+  <rect class="badge-glow" x="788" y="14" width="94" height="22" fill="rgba(118,185,0,0.12)" stroke="rgba(118,185,0,0.4)" stroke-width="1" rx="4"/>
+  <text x="835" y="29" text-anchor="middle" fill="#76b900" font-size="9" font-weight="700" letter-spacing="1">OFFLINE / SECURE</text>
+
+  <!-- ── ROW 1: UPLOAD PIPELINE ── -->
+
+  <!-- USER box -->
+  <g class="bx1">
+    <rect x="30" y="90" width="110" height="70" fill="url(#grey-grad)" stroke="#2a3a4a" stroke-width="1.5" rx="8" filter="url(#shadow)"/>
+    <text x="85" y="116" text-anchor="middle" fill="#76b900" font-size="18">👤</text>
+    <text x="85" y="134" text-anchor="middle" fill="#c9d1d9" font-size="10" font-weight="600" letter-spacing="0.5">USER</text>
+    <text x="85" y="150" text-anchor="middle" fill="#4a6070" font-size="8.5">Query / Upload</text>
+  </g>
+
+  <!-- Arrow: user -> upload -->
+  <line class="farrow" x1="140" y1="125" x2="188" y2="125" stroke="#76b900" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="164" y="119" text-anchor="middle" fill="#4a6070" font-size="8">uploads</text>
+
+  <!-- DOCUMENT UPLOAD box -->
+  <g class="bx2">
+    <rect x="190" y="90" width="130" height="70" fill="url(#blue-grad)" stroke="#1e3a5f" stroke-width="1.5" rx="8" filter="url(#shadow)"/>
+    <text x="255" y="116" text-anchor="middle" fill="#60a5fa" font-size="16">📄</text>
+    <text x="255" y="133" text-anchor="middle" fill="#c9d1d9" font-size="10" font-weight="600" letter-spacing="0.5">DOCUMENT UPLOAD</text>
+    <text x="255" y="148" text-anchor="middle" fill="#4a6070" font-size="8.5">PDF · TXT · DOCX</text>
+  </g>
+
+  <!-- Arrow: upload -> Embeddings -->
+  <line class="farrow" x1="320" y1="125" x2="368" y2="125" stroke="#76b900" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- HUGGINGFACE EMBEDDINGS -->
+  <g class="bx3">
+    <rect x="370" y="90" width="145" height="70" fill="url(#grey-grad)" stroke="#2a3a4a" stroke-width="1.5" rx="8" filter="url(#shadow)"/>
+    <text x="442" y="113" text-anchor="middle" fill="#fde047" font-size="9" font-weight="700" letter-spacing="0.5">HuggingFace</text>
+    <text x="442" y="127" text-anchor="middle" fill="#c9d1d9" font-size="10" font-weight="600" letter-spacing="0.3">EMBEDDINGS</text>
+    <text x="442" y="141" text-anchor="middle" fill="#4a6070" font-size="8">all-MiniLM-L6-v2</text>
+    <text x="442" y="153" text-anchor="middle" fill="#4a6070" font-size="8">100% Offline</text>
+  </g>
+
+  <!-- Arrow: Embeddings -> FAISS -->
+  <line class="farrow" x1="515" y1="125" x2="563" y2="125" stroke="#76b900" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- FAISS VECTOR STORE -->
+  <g class="bx4">
+    <rect class="faiss-b" x="565" y="90" width="130" height="70" fill="url(#blue-grad)" stroke="#1e3a5f" stroke-width="2" rx="8" filter="url(#shadow)"/>
+    <!-- scan line inside FAISS -->
+    <rect class="scan" style="--sd:1.8s;--sh:66px" clip-path="url(#faiss-clip)" x="565" y="90" width="130" height="3" fill="rgba(96,165,250,.5)" rx="1"/>
+    <text x="630" y="113" text-anchor="middle" fill="#60a5fa" font-size="9" font-weight="700" letter-spacing="0.5">FAISS</text>
+    <text x="630" y="127" text-anchor="middle" fill="#c9d1d9" font-size="10" font-weight="600" letter-spacing="0.3">VECTOR STORE</text>
+    <text x="630" y="141" text-anchor="middle" fill="#4a6070" font-size="8">Persisted to Disk</text>
+    <text x="630" y="153" text-anchor="middle" fill="#4a6070" font-size="8">Cache Optimized</text>
+  </g>
+
+  <!-- Disk cache drop line -->
+  <line class="disk-d" x1="630" y1="160" x2="630" y2="195" stroke="#1e2a3a" stroke-width="1" stroke-dasharray="4,3"/>
+  <rect x="595" y="196" width="70" height="22" fill="#0d1117" stroke="#1e2a3a" stroke-width="1" rx="4"/>
+  <text x="630" y="211" text-anchor="middle" fill="#2a3a4a" font-size="8">💾 .faiss_storage/</text>
+
+  <!-- ── DIVIDER ── -->
+  <line class="divider" x1="30" y1="185" x2="870" y2="185" stroke="#1e2a3a" stroke-width="1" stroke-dasharray="5,5"/>
+  <text x="450" y="181" text-anchor="middle" fill="#2a3a4a" font-size="8" letter-spacing="1">QUERY PIPELINE</text>
+
+  <!-- ── ROW 2: QUERY PIPELINE ── -->
+
+  <!-- Arrow: User -> Input Guard (vertical) -->
+  <line class="farrow" x1="85" y1="160" x2="85" y2="220" stroke="#76b900" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="95" y="195" fill="#4a6070" font-size="8">query</text>
+
+  <!-- NEMO INPUT SAFETY -->
+  <g class="bx5">
+    <rect class="nemo-glow" x="30" y="222" width="140" height="72" fill="#110a00" stroke="#76b900" stroke-width="1.5" rx="8"/>
+    <rect x="30" y="222" width="140" height="18" fill="rgba(118,185,0,0.18)" rx="8"/>
+    <rect x="30" y="232" width="140" height="8"  fill="rgba(118,185,0,0.18)"/>
+    <!-- scan line inside NeMo Input -->
+    <rect class="scan" style="--sd:1.4s;--sh:68px" clip-path="url(#ing-clip)" x="30" y="222" width="140" height="3" fill="rgba(118,185,0,.5)" rx="1"/>
+    <text x="100" y="235" text-anchor="middle" fill="#76b900" font-size="8.5" font-weight="800" letter-spacing="1">NEMO GUARDRAILS</text>
+    <text x="100" y="253" text-anchor="middle" fill="#c9d1d9" font-size="10" font-weight="600">INPUT SAFETY</text>
+    <text x="100" y="267" text-anchor="middle" fill="#4a6070" font-size="8">Jailbreak Detection</text>
+    <text x="100" y="279" text-anchor="middle" fill="#4a6070" font-size="8">Sensitivity Filter</text>
+  </g>
+
+  <!-- Blocked path (left of NeMo input) — fixed x so text isn't clipped -->
+  <line class="blink" x1="30" y1="258" x2="12" y2="258" stroke="#f87171" stroke-width="1.2" stroke-dasharray="3,2"/>
+  <text x="12" y="247" text-anchor="middle"  fill="#f87171" font-size="9" class="blink">⛔</text>
+  <text x="12" y="271" text-anchor="middle"  fill="#f87171" font-size="7">blocked</text>
+
+  <!-- Arrow: Input Guard -> Retriever -->
+  <line class="farrow" x1="170" y1="258" x2="218" y2="258" stroke="#76b900" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="194" y="252" text-anchor="middle" fill="#4a6070" font-size="8">approved</text>
+
+  <!-- LANGCHAIN RETRIEVER -->
+  <g class="bx6">
+    <rect x="220" y="222" width="140" height="72" fill="url(#grey-grad)" stroke="#2a3a4a" stroke-width="1.5" rx="8" filter="url(#shadow)"/>
+    <text x="290" y="245" text-anchor="middle" fill="#a78bfa" font-size="9" font-weight="700" letter-spacing="0.5">LangChain</text>
+    <text x="290" y="259" text-anchor="middle" fill="#c9d1d9" font-size="10" font-weight="600">RETRIEVER</text>
+    <text x="290" y="273" text-anchor="middle" fill="#4a6070" font-size="8">History-Aware</text>
+    <text x="290" y="285" text-anchor="middle" fill="#4a6070" font-size="8">Similarity Search</text>
+  </g>
+
+  <!-- FAISS -> Retriever context curve -->
+  <path class="fcurve" d="M630 160 Q630 230 360 258" fill="none" stroke="#60a5fa" stroke-width="1.2" stroke-dasharray="6,4" marker-end="url(#arrow-blue)"/>
+  <text x="530" y="218" fill="#60a5fa" font-size="8">context chunks</text>
+  <!-- traveling dot on FAISS->Retriever -->
+  <circle r="4" fill="#60a5fa">
+    <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.08;.92;1" dur="3s" repeatCount="indefinite"/>
+    <animateMotion dur="3s" repeatCount="indefinite"><mpath href="#mp-faiss-ret"/></animateMotion>
+  </circle>
+
+  <!-- Arrow: Retriever -> RAG Chain -->
+  <line class="farrow" x1="360" y1="258" x2="408" y2="258" stroke="#76b900" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- RAG CHAIN -->
+  <g class="bx7">
+    <rect x="410" y="222" width="140" height="72" fill="url(#blue-grad)" stroke="#1e3a5f" stroke-width="1.5" rx="8" filter="url(#shadow)"/>
+    <text x="480" y="245" text-anchor="middle" fill="#a78bfa" font-size="9" font-weight="700" letter-spacing="0.5">LangChain</text>
+    <text x="480" y="259" text-anchor="middle" fill="#c9d1d9" font-size="10" font-weight="600">RAG CHAIN</text>
+    <text x="480" y="273" text-anchor="middle" fill="#4a6070" font-size="8">Prompt Assembly</text>
+    <text x="480" y="285" text-anchor="middle" fill="#4a6070" font-size="8">Stuff Documents</text>
+  </g>
+
+  <!-- Arrow: RAG Chain -> Ollama -->
+  <line class="farrow" x1="550" y1="258" x2="598" y2="258" stroke="#76b900" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- OLLAMA LOCAL LLM -->
+  <g class="bx8">
+    <rect class="ollama-b" x="600" y="222" width="140" height="72" fill="url(#grey-grad)" stroke="#2a3a4a" stroke-width="1.5" rx="8" filter="url(#shadow)"/>
+    <text x="670" y="245" text-anchor="middle" fill="#c9d1d9" font-size="9" font-weight="700" letter-spacing="0.5">Ollama</text>
+    <text x="670" y="259" text-anchor="middle" fill="#c9d1d9" font-size="10" font-weight="600">LOCAL LLM</text>
+    <text x="670" y="273" text-anchor="middle" fill="#4a6070" font-size="8">gemma3:1b / llama3</text>
+    <text x="670" y="285" text-anchor="middle" fill="#4a6070" font-size="8">100% Offline</text>
+  </g>
+
+  <!-- Arrow: Ollama -> Output Guard -->
+  <line class="farrow" x1="740" y1="258" x2="788" y2="258" stroke="#76b900" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- NEMO OUTPUT SAFETY -->
+  <g class="bx9">
+    <rect class="nemo-glow" x="790" y="222" width="80" height="72" fill="#110a00" stroke="#76b900" stroke-width="1.5" rx="8"/>
+    <rect x="790" y="222" width="80" height="18" fill="rgba(118,185,0,0.18)" rx="8"/>
+    <rect x="790" y="232" width="80" height="8"  fill="rgba(118,185,0,0.18)"/>
+    <!-- scan line inside NeMo Output -->
+    <rect class="scan" style="--sd:1.4s;--sh:68px" clip-path="url(#outg-clip)" x="790" y="222" width="80" height="3" fill="rgba(118,185,0,.5)" rx="1"/>
+    <text x="830" y="235" text-anchor="middle" fill="#76b900" font-size="7.5" font-weight="800" letter-spacing="0.8">NEMO</text>
+    <text x="830" y="249" text-anchor="middle" fill="#c9d1d9" font-size="9" font-weight="600">OUTPUT</text>
+    <text x="830" y="261" text-anchor="middle" fill="#c9d1d9" font-size="9" font-weight="600">SAFETY</text>
+    <text x="830" y="275" text-anchor="middle" fill="#4a6070" font-size="7.5">PII Filter</text>
+    <text x="830" y="286" text-anchor="middle" fill="#4a6070" font-size="7.5">Data Policy</text>
+  </g>
+
+  <!-- ── ROW 3: SAFETY LAYER ── -->
+  <line class="divider" x1="30" y1="320" x2="870" y2="320" stroke="#1e2a3a" stroke-width="1" stroke-dasharray="5,5"/>
+  <text x="450" y="316" text-anchor="middle" fill="#2a3a4a" font-size="8" letter-spacing="1">SAFETY POLICY LAYER</text>
+
+  <!-- SENSITIVITY LEVELS panel -->
+  <g class="bx10">
+    <rect x="30" y="332" width="530" height="78" fill="url(#grey-grad)" stroke="#2a3a4a" stroke-width="1.2" rx="8"/>
+    <text x="295" y="350" text-anchor="middle" fill="#8d96a0" font-size="9" font-weight="700" letter-spacing="1.5">DATA SENSITIVITY LEVELS</text>
+    <!-- PUBLIC -->
+    <rect class="bp0" x="45"  y="358" width="112" height="38" fill="rgba(74,222,128,0.07)"  stroke="rgba(74,222,128,0.3)"  stroke-width="1" rx="5"/>
+    <text x="101"  y="372" text-anchor="middle" fill="#4ade80" font-size="9" font-weight="700">PUBLIC</text>
+    <text x="101"  y="387" text-anchor="middle" fill="#2a4a3a" font-size="7.5">Jailbreak only</text>
+    <!-- INTERNAL -->
+    <rect class="bp1" x="166" y="358" width="112" height="38" fill="rgba(96,165,250,0.07)"  stroke="rgba(96,165,250,0.3)"  stroke-width="1" rx="5"/>
+    <text x="222"  y="372" text-anchor="middle" fill="#60a5fa" font-size="9" font-weight="700">INTERNAL</text>
+    <text x="222"  y="387" text-anchor="middle" fill="#1e3a5a" font-size="7.5">+ Credentials</text>
+    <!-- CONFIDENTIAL -->
+    <rect class="bp2" x="287" y="358" width="112" height="38" fill="rgba(253,224,71,0.07)"  stroke="rgba(253,224,71,0.3)"  stroke-width="1" rx="5"/>
+    <text x="343"  y="372" text-anchor="middle" fill="#fde047" font-size="9" font-weight="700">CONFIDENTIAL</text>
+    <text x="343"  y="387" text-anchor="middle" fill="#3a3a00" font-size="7.5">+ PII / SSN</text>
+    <!-- RESTRICTED -->
+    <rect class="bp3" x="408" y="358" width="137" height="38" fill="rgba(251,113,133,0.07)" stroke="rgba(251,113,133,0.3)" stroke-width="1" rx="5"/>
+    <text x="476"  y="372" text-anchor="middle" fill="#fb7185" font-size="9" font-weight="700">RESTRICTED</text>
+    <text x="476"  y="387" text-anchor="middle" fill="#3a1020" font-size="7.5">+ Medical / Financial</text>
+  </g>
+
+  <!-- STREAMLIT WEB UI -->
+  <g class="bx11">
+    <rect class="streamlit-b" x="580" y="332" width="160" height="78" fill="url(#blue-grad)" stroke="#1e3a5f" stroke-width="1.5" rx="8" filter="url(#shadow)"/>
+    <text x="660" y="352" text-anchor="middle" fill="#60a5fa" font-size="9" font-weight="700" letter-spacing="0.5">Streamlit</text>
+    <text x="660" y="366" text-anchor="middle" fill="#c9d1d9" font-size="10" font-weight="600">WEB INTERFACE</text>
+    <text x="660" y="381" text-anchor="middle" fill="#4a6070" font-size="8">Dark Professional UI</text>
+    <text x="660" y="395" text-anchor="middle" fill="#4a6070" font-size="8">localhost:8501</text>
+  </g>
+
+  <!-- Arrow: Output Guard -> Streamlit (curve) -->
+  <path class="fcurve" d="M830 294 Q830 313 750 340" fill="none" stroke="#76b900" stroke-width="1.5" stroke-dasharray="8,5" marker-end="url(#arrow)"/>
+  <text x="820" y="315" fill="#4a6070" font-size="7.5" text-anchor="middle">safe response</text>
+  <circle r="3.5" fill="#76b900">
+    <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.08;.92;1" dur="2.5s" repeatCount="indefinite" begin=".5s"/>
+    <animateMotion dur="2.5s" repeatCount="indefinite" begin=".5s"><mpath href="#mp-out-ui"/></animateMotion>
+  </circle>
+
+  <!-- Arrow: Streamlit -> User (return curve) -->
+  <path class="fcurve" d="M580 371 Q430 430 85 430" fill="none" stroke="#76b900" stroke-width="1.5" stroke-dasharray="8,5" marker-end="url(#arrow)"/>
+  <text x="340" y="450" text-anchor="middle" fill="#4a6070" font-size="8">final answer displayed in chat</text>
+  <circle r="3.5" fill="#76b900">
+    <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.08;.92;1" dur="3.5s" repeatCount="indefinite" begin="1s"/>
+    <animateMotion dur="3.5s" repeatCount="indefinite" begin="1s"><mpath href="#mp-ui-user"/></animateMotion>
+  </circle>
+
+  <!-- LEGEND -->
+  <rect x="745" y="430" width="135" height="110" fill="#0d1117" stroke="#1e2a3a" stroke-width="1" rx="6"/>
+  <text x="812" y="447" text-anchor="middle" fill="#8d96a0" font-size="8.5" font-weight="700" letter-spacing="1">LEGEND</text>
+  <line x1="756" y1="460" x2="790" y2="460" stroke="#76b900" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="800" y="463" fill="#8d96a0" font-size="8">Data Flow</text>
+  <line x1="756" y1="476" x2="790" y2="476" stroke="#60a5fa" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arrow-blue)"/>
+  <text x="800" y="479" fill="#8d96a0" font-size="8">Context Lookup</text>
+  <line x1="756" y1="492" x2="790" y2="492" stroke="#f87171" stroke-width="1.2" stroke-dasharray="3,2"/>
+  <text x="800" y="495" fill="#8d96a0" font-size="8">Blocked Path</text>
+  <rect x="756" y="503" width="14" height="10" fill="#110a00" stroke="#76b900" stroke-width="1" rx="2"/>
+  <text x="800" y="512" fill="#8d96a0" font-size="8">NeMo Guardrails</text>
+  <rect x="756" y="519" width="14" height="10" fill="url(#blue-grad)" stroke="#1e3a5f" stroke-width="1" rx="2"/>
+  <text x="800" y="528" fill="#8d96a0" font-size="8">LangChain Component</text>
+
+  <!-- Footer -->
+  <line x1="0" y1="544" x2="900" y2="544" stroke="#1e2a3a" stroke-width="1"/>
+  <text x="450" y="555" text-anchor="middle" fill="#2a3a4a" font-size="8" letter-spacing="1">github.com/sowmiyan-s/GUARDRAILS-RAG-CHAT-BOT  ·  MIT LICENSE  ·  NVIDIA NeMo Guardrails + LangChain + Ollama + FAISS</text>
+</svg>

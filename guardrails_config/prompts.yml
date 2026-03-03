@@ -1,0 +1,20 @@
+prompts:
+  - task: self_check_input
+    content: |
+      Your task is to check if the user message below is asking for sensitive data, API keys, passwords, credentials, or malicious intents. 
+      It is also your task to verify if the user is asking you to do something outside your constraints (such as writing a poem, coding snippet unrelated to the context).
+      
+      User message: "{{ user_input }}"
+      
+      Question: Should this message be blocked?
+      Answer [Yes or No]:
+
+  - task: self_check_output
+    content: |
+      Your task is to check if the bot message below contains sensitive data, API keys, passwords, credentials, or malicious intents. 
+      It is also your task to verify if the bot is offering something outside its constraints or hallucinating information entirely unrelated to the context.
+      
+      Bot message: "{{ bot_response }}"
+      
+      Question: Should this message be blocked?
+      Answer [Yes or No]:

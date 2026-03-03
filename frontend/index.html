@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Guardrails Local RAG Bot</title>
+  <meta name="description"
+    content="Privacy-first, fully offline AI document assistant secured by NVIDIA NeMo Guardrails." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="static/style.css" />
+</head>
+
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SIDEBAR (collapsible on desktop, drawer on mobile)
+  ══════════════════════════════════════════════════════════════════ -->
+  <aside id="sidebar" class="sidebar" aria-label="Settings panel">
+
+    <!-- Brand header — always visible -->
+    <div class="sidebar-brand">
+      <div class="logo-mark" aria-hidden="true">RAG</div>
+      <span class="sb-text brand-title">RAG BOT</span>
+      <!-- Desktop collapse toggle -->
+      <button class="sb-collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse sidebar" title="Collapse sidebar">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <polyline points="13 4 7 10 13 16" />
+        </svg>
+      </button>
+      <!-- Mobile close button -->
+      <button class="sb-mobile-close" id="sidebarClose" aria-label="Close sidebar">✕</button>
+    </div>
+
+    <!-- Scrollable body (hidden when sidebar collapsed to icon rail) -->
+    <div class="sidebar-body" id="sidebarBody">
+
+      <hr class="divider" />
+
+      <!-- ── Connection / Ollama Endpoint ───────────────────────────── -->
+      <div class="section-label sb-text">Ollama Connection</div>
+
+      <div id="ollamaStatus" class="status-badge status-loading" role="status" aria-live="polite">
+        <span class="status-dot"></span>
+        <span class="sb-text" id="ollamaStatusText">Checking…</span>
+      </div>
+
+      <div style="margin-top:0.65rem;">
+        <label class="form-label sb-text" for="ollamaEndpoint">Endpoint URL</label>
+        <input id="ollamaEndpoint" type="url" class="form-control sb-text" placeholder="http://localhost:11434"
+          title="Ollama API base URL" />
+      </div>
+
+      <button id="btnStartOllama" class="btn btn-secondary btn-full sb-text"
+        style="display:none; margin-top:0.5rem;">Start Ollama</button>
+
+      <div style="margin-top:0.85rem;">
+        <label class="section-label sb-text" for="modelSelect">Active Model</label>
+        <select id="modelSelect" class="form-control sb-text">
+          <option value="gemma3:1b">gemma3:1b</option>
+        </select>
+      </div>
+
+      <hr class="divider" />
+
+      <!-- ── Safety & Privacy ───────────────────────────────────────── -->
+      <div class="section-label sb-text">Safety &amp; Privacy</div>
+
+      <label class="toggle-row" for="guardrailsToggle">
+        <span class="toggle-label sb-text">Enable Guardrails</span>
+        <div class="toggle-switch">
+          <input type="checkbox" id="guardrailsToggle" checked />
+          <span class="toggle-slider"></span>
+        </div>
+      </label>
+
+      <div style="margin-top:0.75rem;">
+        <label class="section-label sb-text" for="sensitivitySelect">Sensitivity Level</label>
+        <select id="sensitivitySelect" class="form-control sb-text">
+          <option value="Public">Public</option>
+          <option value="Internal" selected>Internal</option>
+          <option value="Confidential">Confidential</option>
+          <option value="Restricted">Restricted</option>
+        </select>
+      </div>
+
+      <div style="margin-top:0.65rem;">
+        <div id="sensitivityBadge" class="sensitivity-badge badge-internal">
+          <span id="sensitivityBadgeLabel">INTERNAL</span>
+        </div>
+        <p id="sensitivityDesc" class="hint-text sb-text">
+          Suitable for internal business data. Blocks credential and API key exposure.
+        </p>
+      </div>
+
+      <details class="details-block sb-text" style="margin-top:0.65rem;">
+        <summary>Sensitivity Reference</summary>
+        <table class="ref-table" aria-label="Sensitivity levels">
+          <tbody>
+            <tr>
+              <td><span class="badge-chip public">Public</span></td>
+              <td>Jailbreak only</td>
+            </tr>
+            <tr>
+              <td><span class="badge-chip internal">Internal</span></td>
+              <td>+ API keys, creds</td>
+            </tr>
+            <tr>
+              <td><span class="badge-chip confidential">Confidential</span></td>
+              <td>+ PII / SSN</td>
+            </tr>
+            <tr>
+              <td><span class="badge-chip restricted">Restricted</span></td>
+              <td>+ Medical / HIPAA</td>
+            </tr>
+          </tbody>
+        </table>
+      </details>
+
+      <hr class="divider" />
+
+      <!-- ── Chunking ────────────────────────────────────────────────── -->
+      <details class="details-block sb-text">
+        <summary>Chunking Parameters</summary>
+        <div style="margin-top:0.65rem;">
+          <label class="form-label" for="chunkSize">Chunk Size (chars)</label>
+          <input id="chunkSize" type="number" class="form-control" value="1000" min="100" step="100" />
+        </div>
+        <div style="margin-top:0.45rem;">
+          <label class="form-label" for="chunkOverlap">Chunk Overlap (chars)</label>
+          <input id="chunkOverlap" type="number" class="form-control" value="200" min="0" step="50" />
+        </div>
+      </details>
+
+      <hr class="divider" />
+
+      <!-- ── Document Library (Storage Pool) ───────────────────────── -->
+      <div class="section-label sb-text">Document Library</div>
+      <p class="hint-text sb-text" style="margin-top:0;">Previously indexed collections — load without re-uploading.</p>
+
+      <div id="storagePool" class="storage-pool" style="margin-top:0.55rem;">
+        <div class="storage-empty sb-text" id="storageEmpty">No indexed collections yet.</div>
+      </div>
+
+      <button id="btnRefreshStorage" class="btn btn-ghost btn-full sb-text"
+        style="margin-top:0.4rem; font-size:0.66rem;">
+        ↻ Refresh Library
+      </button>
+
+      <hr class="divider" />
+
+      <button id="btnClear" class="btn btn-ghost btn-full sb-text">🗑 Clear Conversation</button>
+
+      <div class="sidebar-footer">
+        <div class="version-tag sb-text">v1.0 · Offline · Open Source</div>
+        <a href="https://github.com/sowmiyan-s" target="_blank" rel="noopener" class="footer-link sb-text">
+          ⛓ github.com/sowmiyan-s
+        </a>
+      </div>
+    </div>
+
+    <!-- Icon-only rail (shown when sidebar is collapsed on desktop) -->
+    <div class="sidebar-rail" id="sidebarRail" style="display:none;">
+      <div class="rail-icon" title="Ollama status">
+        <span class="status-dot" id="railStatusDot"></span>
+      </div>
+      <div class="rail-icon" title="Toggle guardrails" id="railGuardrailsIcon">🛡</div>
+      <div class="rail-icon" title="Clear conversation" id="railClearBtn">🗑</div>
+    </div>
+
+  </aside>
+
+  <!-- Backdrop (mobile only) -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       MAIN
+  ══════════════════════════════════════════════════════════════════ -->
+  <div class="main-wrapper" id="mainWrapper">
+
+    <!-- TOP HEADER -->
+    <header class="top-header">
+      <!-- Mobile hamburger -->
+      <button class="hamburger" id="sidebarOpen" aria-label="Open sidebar" aria-expanded="false"
+        aria-controls="sidebar">
+        <span></span><span></span><span></span>
+      </button>
+      <!-- Collapsed-sidebar expand button (desktop) -->
+      <button class="sb-expand-btn" id="sidebarExpandBtn" style="display:none;" aria-label="Expand sidebar"
+        title="Expand sidebar">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <polyline points="7 4 13 10 7 16" />
+        </svg>
+      </button>
+
+      <div class="logo-mark logo-sm" aria-hidden="true">RAG</div>
+      <div class="header-text-wrap">
+        <div class="header-title">GUARDRAILS LOCAL RAG BOT</div>
+        <div class="header-sub">NVIDIA NeMo Guardrails &nbsp;·&nbsp; 100% Offline &nbsp;·&nbsp; Local LLM</div>
+      </div>
+
+      <div class="header-right">
+        <!-- Upload panel toggle button in header -->
+        <button class="upload-toggle-btn" id="uploadPanelToggle" title="Toggle upload panel" aria-expanded="true"
+          aria-controls="uploadSection" aria-label="Toggle document upload panel">
+          <svg id="uploadToggleIcon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 14 10 8 16 14" />
+          </svg>
+          <span>Docs</span>
+        </button>
+        <span class="header-badge" id="connectionBadge">OFFLINE / SECURE</span>
+      </div>
+    </header>
+
+    <!-- UPLOAD SECTION (collapsible) -->
+    <section class="upload-section" id="uploadSection" aria-label="Document upload">
+
+      <div class="upload-section-header">
+        <span class="section-label" style="margin:0; border:0;">Document Upload</span>
+        <div id="uploadFileCount" class="upload-file-count" style="display:none;"></div>
+      </div>
+
+      <div class="upload-section-body" id="uploadSectionBody">
+        <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Drop files here or click to browse">
+          <div class="drop-icon" aria-hidden="true">📄</div>
+          <div class="drop-title">
+            Drop files here or <span class="drop-link" id="dropClick" role="button" tabindex="0">browse</span>
+          </div>
+          <div class="drop-sub">PDF &nbsp;·&nbsp; TXT &nbsp;·&nbsp; DOCX &nbsp;·&nbsp; DOC</div>
+          <input type="file" id="fileInput" multiple accept=".pdf,.txt,.doc,.docx" style="display:none;"
+            aria-label="File input" />
+        </div>
+
+        <div id="fileList" class="file-list" style="display:none;" role="list"></div>
+
+        <div class="upload-actions">
+          <button id="btnProcess" class="btn btn-primary" disabled>⚡ Process Documents</button>
+          <button id="btnReset" class="btn btn-ghost" style="display:none;">✕ Remove</button>
+          <div id="uploadStatus" class="upload-status" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <div class="content-divider" id="contentDivider"></div>
+
+    <!-- CHAT AREA -->
+    <section class="chat-section" id="chatSection" aria-label="Chat area">
+
+      <div id="emptyState" class="empty-state">
+        <div class="empty-icon" aria-hidden="true">🔒</div>
+        <div class="empty-title">Your documents stay on your machine</div>
+        <div class="empty-sub">
+          Upload documents above, then chat with them using a fully local AI.
+        </div>
+        <div class="empty-features">
+          <div class="feat-chip">📄 PDF / TXT / DOCX</div>
+          <div class="feat-chip">🧠 Local LLM</div>
+          <div class="feat-chip">🛡 NeMo Guardrails</div>
+          <div class="feat-chip">⚡ FAISS Cache</div>
+        </div>
+      </div>
+
+      <div id="chatMessages" class="chat-messages" style="display:none;" role="log" aria-live="polite"></div>
+
+      <div id="readyBanner" class="ready-banner" style="display:none;" role="status">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path
+            d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z" />
+        </svg>
+        Documents indexed — ask your first question below.
+      </div>
+
+    </section>
+
+    <!-- Typing indicator -->
+    <div id="typingIndicator" class="typing-indicator" style="display:none;" role="status">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <span class="typing-text">Processing…</span>
+    </div>
+
+    <!-- INPUT BAR -->
+    <div class="input-bar-wrapper" id="inputBarWrapper" style="display:none;">
+      <div class="input-bar">
+        <div id="guardrailsIndicator" class="guardrails-indicator active" title="Guardrails enabled" aria-hidden="true">
+          🛡</div>
+        <textarea id="chatInput" class="chat-textarea" placeholder="Enter your question…" rows="1" disabled
+          aria-label="Chat message input"></textarea>
+        <button id="btnSend" class="send-btn" disabled aria-label="Send message">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <line x1="22" y1="2" x2="11" y2="13" />
+            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+          </svg>
+        </button>
+      </div>
+      <div class="input-hint">
+        <span id="sensitivityHint" aria-live="polite">
+          🛡 <strong>Internal</strong> — API keys &amp; credentials protected
+        </span>
+      </div>
+    </div>
+
+  </div><!-- /main-wrapper -->
+
+  <!-- Toasts -->
+  <div id="toastContainer" class="toast-container" role="region" aria-label="Notifications" aria-live="assertive"></div>
+
+  <!-- Tunnel How-To Modal -->
+  <div id="tunnelModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true"
+    aria-labelledby="tunnelModalTitle">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title" id="tunnelModalTitle">🌐 Connect Your Local Ollama Online</span>
+        <button class="modal-close" id="tunnelModalClose" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint-text" style="margin-bottom:0.9rem;">Since this app is hosted on the internet, it can't directly
+          reach <code>localhost</code> on your machine. Use a tunnel to bridge the gap.</p>
+
+        <div class="tunnel-option">
+          <div class="tunnel-name">Option A — ngrok <span class="tunnel-badge">Free</span></div>
+          <ol class="tunnel-steps">
+            <li>Install: <code>choco install ngrok</code> or download from <a href="https://ngrok.com/download"
+                target="_blank">ngrok.com/download</a></li>
+            <li>Start Ollama: <code>ollama serve</code></li>
+            <li>Run tunnel: <code>ngrok http 11434 --host-header="localhost:11434"</code></li>
+            <li>Copy the <code>https://xxxx.ngrok-free.app</code> URL</li>
+            <li>Paste it into the <strong>Endpoint URL</strong> field in the sidebar</li>
+          </ol>
+        </div>
+
+        <div class="tunnel-option" style="margin-top:0.9rem;">
+          <div class="tunnel-name">Option B — Cloudflare Tunnel <span class="tunnel-badge">Free · No account
+              needed</span></div>
+          <ol class="tunnel-steps">
+            <li>Start Ollama: <code>ollama serve</code></li>
+            <li>Run: <code>cloudflared tunnel --url http://localhost:11434</code></li>
+            <li>Copy the <code>https://xxx.trycloudflare.com</code> URL</li>
+            <li>Paste it into the <strong>Endpoint URL</strong> field in the sidebar</li>
+          </ol>
+        </div>
+
+        <div class="tunnel-note">
+          <strong>⚠ Security:</strong> Anyone with the tunnel URL can access your Ollama. Close the tunnel
+          (<kbd>Ctrl+C</kbd>) when not in use.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="static/app.js"></script>
+</body>
+
+</html>

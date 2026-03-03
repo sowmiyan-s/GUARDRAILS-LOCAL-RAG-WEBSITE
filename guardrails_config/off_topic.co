@@ -1,0 +1,15 @@
+define user ask off topic
+  "Can you write a poem about the moon?"
+  "What is the capital of France?"
+  "Who won the Super Bowl last year?"
+  "Give me a recipe for chocolate cake"
+  "Tell me a joke"
+  "Write some python code to scrape a website"
+  "How do you tie a tie?"
+
+define bot refuse to respond
+  "I'm sorry, I am a document assistant and can only answer questions related to the documents you have provided me."
+
+define flow check off topic
+  user ask off topic
+  bot refuse to respond
