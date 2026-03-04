@@ -39,6 +39,7 @@ const ollamaEndpointInput = $('ollamaEndpoint');
 const ollamaStatus = $('ollamaStatus');
 const ollamaStatusText = $('ollamaStatusText');
 const btnStartOllama = $('btnStartOllama');
+const startOllamaHint = $('startOllamaHint');
 const modelSelect = $('modelSelect');
 const connectionBadge = $('connectionBadge');
 
@@ -84,9 +85,40 @@ const toastContainer = $('toastContainer');
 const tunnelModal = $('tunnelModal');
 const tunnelModalClose = $('tunnelModalClose');
 
+const ollamaStartModal = $('ollamaStartModal');
+const ollamaStartModalClose = $('ollamaStartModalClose');
+const ollamaStartRetry = $('ollamaStartRetry');
+
 // ─── Ollama endpoint (stored in localStorage) ─────────────────────────────────
 function getOllamaEndpoint() {
   return (ollamaEndpointInput.value || '').trim() || DEFAULT_OLLAMA_ENDPOINT;
+}
+
+/**
+ * Fetch server-side config (/api/config).
+ * - If the user has never saved a custom endpoint, we use the server's OLLAMA_HOST.
+ * - If the user previously saved a custom endpoint in localStorage, we keep it.
+ * - The server config is cached in state.serverConfig for later use.
+ */
+async function fetchConfig() {
+  try {
+    const cfg = await apiFetch('/api/config');
+    state.serverConfig = cfg;
+    // Only auto-apply server host if user hasn't manually overridden it
+    const saved = localStorage.getItem('ragbot_ollama_endpoint');
+    const userOverrode = saved && saved !== DEFAULT_OLLAMA_ENDPOINT;
+    if (!userOverrode && cfg.server_ollama_host) {
+      // Server has a non-default host configured (e.g. ngrok tunnel)
+      ollamaEndpointInput.value = cfg.server_ollama_host;
+      localStorage.setItem('ragbot_ollama_endpoint', cfg.server_ollama_host);
+    } else {
+      // User's choice wins — restore from localStorage
+      loadSavedEndpoint();
+    }
+  } catch {
+    // Config fetch failed (offline?) — just restore whatever was saved
+    loadSavedEndpoint();
+  }
 }
 
 function loadSavedEndpoint() {
@@ -137,7 +169,44 @@ tunnelModalClose.addEventListener('click', () => { tunnelModal.style.display = '
 tunnelModal.addEventListener('click', e => { if (e.target === tunnelModal) tunnelModal.style.display = 'none'; });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && tunnelModal.style.display !== 'none') tunnelModal.style.display = 'none';
+  if (e.key === 'Escape' && ollamaStartModal && ollamaStartModal.style.display !== 'none') {
+    ollamaStartModal.style.display = 'none';
+    if (_ollamaPoller) { clearInterval(_ollamaPoller); _ollamaPoller = null; }
+  }
 });
+
+// ─── Start Ollama modal ───────────────────────────────────────────────────────
+if (ollamaStartModalClose) {
+  ollamaStartModalClose.addEventListener('click', () => {
+    ollamaStartModal.style.display = 'none';
+    if (_ollamaPoller) { clearInterval(_ollamaPoller); _ollamaPoller = null; }
+  });
+}
+if (ollamaStartModal) {
+  ollamaStartModal.addEventListener('click', e => {
+    if (e.target === ollamaStartModal) {
+      ollamaStartModal.style.display = 'none';
+      if (_ollamaPoller) { clearInterval(_ollamaPoller); _ollamaPoller = null; }
+    }
+  });
+}
+if (ollamaStartRetry) {
+  ollamaStartRetry.addEventListener('click', async () => {
+    ollamaStartRetry.disabled = true;
+    ollamaStartRetry.innerHTML = '<span class="btn-spinner"></span> Checking…';
+    const { running } = await checkOllamaDirectly(getOllamaEndpoint());
+    if (running) {
+      if (_ollamaPoller) { clearInterval(_ollamaPoller); _ollamaPoller = null; }
+      ollamaStartModal.style.display = 'none';
+      await refreshHealth();
+      toast('Ollama is now running!', 'success');
+    } else {
+      toast('Ollama not detected yet — make sure you ran the command above.', 'warn', 4000);
+      ollamaStartRetry.disabled = false;
+      ollamaStartRetry.innerHTML = 'Check Again';
+    }
+  });
+}
 
 // ─── SIDEBAR — Mobile drawer ───────────────────────────────────────────────────
 function openMobileSidebar() {
@@ -212,65 +281,111 @@ function autoCollapseUpload() {
   if (state.uploadOpen) setUploadPanelOpen(false);
 }
 
-// ─── OLLAMA STATUS ────────────────────────────────────────────────────────────
+// ─── OLLAMA HEALTH — checked directly from the browser (client → localhost) ────
+// The browser pings Ollama directly. This works even when the app is hosted
+// on Railway because Ollama allows cross-origin requests from any page.
+// The backend is NOT used as a proxy here — that way the status always
+// reflects whether Ollama is running on THIS user's machine.
+async function checkOllamaDirectly(endpoint) {
+  try {
+    const url = endpoint.replace(/\/$/, '') + '/api/tags';
+    // Ollama's CORS headers allow browser fetches from any origin
+    const res = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(3000) });
+    if (!res.ok) return { running: false, models: [] };
+    const data = await res.json();
+    return {
+      running: true,
+      models: (data.models || []).map(m => m.name),
+    };
+  } catch {
+    return { running: false, models: [] };
+  }
+}
+
 async function refreshHealth() {
   const endpoint = getOllamaEndpoint();
-  const params = new URLSearchParams({ ollama_host: endpoint });
-  try {
-    const data = await apiFetch(`/api/health?${params}`);
-    state.ollamaRunning = data.ollama_running;
-    state.models = data.models || [];
+  const isLocal = endpoint.includes('localhost') || endpoint.includes('127.0.0.1');
 
-    if (data.ollama_running) {
-      ollamaStatus.className = 'status-badge status-online';
-      const isLocal = endpoint.includes('localhost') || endpoint.includes('127.0.0.1');
-      ollamaStatusText.textContent = isLocal ? 'Ollama — Running (local)' : 'Ollama — Connected (remote)';
-      btnStartOllama.style.display = 'none';
-      connectionBadge.textContent = isLocal ? 'OFFLINE / SECURE' : 'TUNNELLED / SECURE';
-      connectionBadge.style.color = isLocal ? 'var(--accent)' : 'var(--info)';
-      connectionBadge.style.borderColor = isLocal ? 'var(--accent-border)' : 'rgba(96,165,250,0.35)';
-      connectionBadge.style.background = isLocal ? 'var(--accent-dim)' : 'rgba(96,165,250,0.10)';
+  // Direct browser check — no backend proxy needed
+  const { running, models } = await checkOllamaDirectly(endpoint);
+  state.ollamaRunning = running;
+  state.models = models;
 
-      modelSelect.innerHTML = '';
-      const models = state.models.length ? state.models : ['gemma3:1b'];
+  if (running) {
+    ollamaStatus.className = 'status-badge status-online';
+    ollamaStatusText.textContent = isLocal ? 'Ollama — Running (local)' : 'Ollama — Connected (remote)';
+    btnStartOllama.style.display = 'none';
+    if (startOllamaHint) startOllamaHint.style.display = 'none';
+    connectionBadge.textContent = isLocal ? 'LOCAL / SECURE' : 'TUNNELLED / SECURE';
+    connectionBadge.style.color = isLocal ? 'var(--accent)' : 'var(--info)';
+    connectionBadge.style.borderColor = isLocal ? 'var(--accent-border)' : 'rgba(96,165,250,0.35)';
+    connectionBadge.style.background = isLocal ? 'var(--accent-dim)' : 'rgba(96,165,250,0.10)';
+
+    // Populate model selector
+    modelSelect.innerHTML = '';
+    if (models.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = ''; opt.textContent = 'No models found'; opt.disabled = true; opt.selected = true;
+      modelSelect.appendChild(opt);
+    } else {
       models.forEach(m => {
         const opt = document.createElement('option');
         opt.value = m; opt.textContent = m;
-        if (m === 'gemma3:1b') opt.selected = true;
         modelSelect.appendChild(opt);
       });
-    } else {
-      ollamaStatus.className = 'status-badge status-offline';
-      const isLocal = endpoint.includes('localhost') || endpoint.includes('127.0.0.1');
-      ollamaStatusText.textContent = isLocal ? 'Ollama — Stopped' : 'Ollama — Unreachable';
-      btnStartOllama.style.display = isLocal ? 'block' : 'none';
-      connectionBadge.textContent = 'OFFLINE / SECURE';
-      connectionBadge.style.color = '';
-      connectionBadge.style.borderColor = '';
-      connectionBadge.style.background = '';
     }
-  } catch {
+  } else {
     ollamaStatus.className = 'status-badge status-offline';
-    ollamaStatusText.textContent = 'Ollama — Unreachable';
+    ollamaStatusText.textContent = isLocal ? 'Ollama — Not running' : 'Ollama — Unreachable';
     btnStartOllama.style.display = 'block';
+    if (startOllamaHint) {
+      startOllamaHint.style.display = 'block';
+      startOllamaHint.textContent = isLocal
+        ? 'Click to see how to start Ollama on your computer.'
+        : 'Remote endpoint unreachable. Check the URL or set up a tunnel.';
+    }
+    connectionBadge.textContent = 'DISCONNECTED';
+    connectionBadge.style.color = '';
+    connectionBadge.style.borderColor = '';
+    connectionBadge.style.background = '';
   }
   syncRailStatus();
 }
 
-btnStartOllama.addEventListener('click', async () => {
-  btnStartOllama.disabled = true;
-  btnStartOllama.textContent = '⏳ Starting…';
-  try {
-    await apiFetch('/api/ollama/start', { method: 'POST' });
-    toast('Ollama started!', 'success');
-    await refreshHealth();
-  } catch (e) {
-    toast(e.message, 'error', 5000);
-  } finally {
-    btnStartOllama.disabled = false;
-    btnStartOllama.textContent = '▶ Start Ollama';
+// ─── START OLLAMA — shows instructions & polls until Ollama comes online ─────
+// Browsers cannot spawn OS processes, so we show the command to run and
+// keep retrying until Ollama responds at the user's localhost.
+btnStartOllama.addEventListener('click', () => {
+  const endpoint = getOllamaEndpoint();
+  const isLocal = endpoint.includes('localhost') || endpoint.includes('127.0.0.1');
+  if (!isLocal) {
+    tunnelModal.style.display = 'flex';
+    return;
   }
+  // Update the endpoint label in the modal
+  const epLabel = document.getElementById('ollamaStartModalEndpoint');
+  if (epLabel) epLabel.textContent = endpoint;
+  // Show the "run ollama serve" instructions modal
+  ollamaStartModal.style.display = 'flex';
+  // Begin polling so the UI updates automatically once user starts Ollama
+  startOllamaPoller();
 });
+
+// Poll every 2 s until Ollama comes online (called after modal is shown)
+let _ollamaPoller = null;
+function startOllamaPoller() {
+  if (_ollamaPoller) return; // already polling
+  _ollamaPoller = setInterval(async () => {
+    const endpoint = getOllamaEndpoint();
+    const { running } = await checkOllamaDirectly(endpoint);
+    if (running) {
+      clearInterval(_ollamaPoller); _ollamaPoller = null;
+      ollamaStartModal.style.display = 'none';
+      await refreshHealth();
+      toast('Ollama is now running!', 'success');
+    }
+  }, 2000);
+}
 
 // ─── SENSITIVITY / GUARDRAILS ─────────────────────────────────────────────────
 const SENSITIVITY_META = {
@@ -526,7 +641,7 @@ async function processDocuments() {
     const data = await res.json();
     state.sessionId = data.session_id;
     state.currentDbId = data.db_id;
-    setUploadStatus(`✓ ${data.files.length} document(s) indexed.`, 'success');
+    setUploadStatus(`${data.files.length} document(s) indexed.`, 'success');
     toast('Documents ready — start chatting!', 'success');
     showChatReady();
     autoCollapseUpload();
@@ -654,7 +769,7 @@ function appendMessage(role, text, blocked = false, isError = false) {
   if (blocked) {
     const label = document.createElement('div');
     label.className = 'guard-label';
-    label.textContent = '🛡 GUARDRAIL TRIGGERED';
+    label.textContent = 'GUARDRAIL TRIGGERED';
     bubble.appendChild(label);
   }
 
@@ -686,14 +801,19 @@ function scrollToBottom() {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 (async function init() {
+  // 1. Fetch server config → auto-populate endpoint URL from server or localStorage
   await fetchConfig();
   updateSensitivityUI();
 
   state.sidebarCollapsed = false;
   sidebarExpandBtn.style.display = 'none';
 
+  // 2. Check Ollama health with whatever endpoint was loaded
   await refreshHealth();
+
+  // 3. Load stored document library
   await loadStoragePool();
 
+  // 4. Poll health every 12 s
   setInterval(refreshHealth, 12_000);
 })();

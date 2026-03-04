@@ -15,3 +15,4 @@ faiss-cpu>=1.8.0
 python-dotenv>=1.0.1
 nest_asyncio>=1.6.0
 pydantic>=2.7.0
+gunicorn>=22.0.0
