@@ -31,4 +31,5 @@ echo "[INFO] Starting FastAPI server on http://localhost:$PORT"
 echo "[INFO] Press Ctrl+C to stop."
 echo ""
 
+
 exec uvicorn backend.main:app --host 0.0.0.0 --port $PORT

@@ -331,10 +331,15 @@ body::after {
   border: 1px solid transparent;
 }
 
-.rail-icon:hover {
+.rail-icon:hover,
+.rail-icon.loading {
   background: var(--accent-dim);
   color: var(--accent-hover);
   border-color: var(--accent-border);
+}
+
+.rail-icon.loading {
+  animation: pulseDot 1s infinite;
 }
 
 /* Section labels */
@@ -356,18 +361,45 @@ body::after {
   margin: .7rem 0;
 }
 
-/* Status badge */
+@keyframes pulseDot {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: .4;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes pulseGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  50% {
+    box-shadow: 0 0 16px var(--accent);
+  }
+}
+
+/* ── Status badge refinements ───────────────────────────────────────── */
 .status-badge {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   font-size: .72rem;
   font-weight: 600;
-  padding: .3rem .65rem;
+  padding: .4rem .75rem;
   border-radius: var(--radius-sm);
   background: var(--bg-glass-light);
   border: 1px solid var(--border);
   width: 100%;
+  transition: all var(--transition);
 }
 
 .status-dot {
@@ -376,51 +408,42 @@ body::after {
   border-radius: 50%;
   background: var(--text-muted);
   flex-shrink: 0;
+  transition: all var(--transition);
 }
 
 .status-badge.status-online {
   color: var(--success);
-  border-color: rgba(16, 185, 129, .3);
-  background: rgba(16, 185, 129, .07);
+  border-color: rgba(118, 185, 0, 0.3);
+  background: rgba(118, 185, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .status-badge.status-offline {
   color: var(--danger);
-  border-color: rgba(244, 63, 94, .3);
-  background: rgba(244, 63, 94, .07);
+  border-color: rgba(244, 63, 94, 0.25);
+  background: rgba(244, 63, 94, 0.06);
 }
 
 .status-badge.status-loading {
   color: var(--warn);
-  border-color: rgba(245, 158, 11, .3);
-  background: rgba(245, 158, 11, .07);
+  border-color: rgba(245, 158, 11, 0.25);
+  background: rgba(245, 158, 11, 0.06);
 }
 
 .status-badge.status-online .status-dot {
   background: var(--success);
-  box-shadow: 0 0 8px var(--success);
+  box-shadow: 0 0 10px var(--success);
+  animation: pulseGlow 2s infinite alternate;
 }
 
 .status-badge.status-offline .status-dot {
   background: var(--danger);
-  box-shadow: 0 0 8px var(--danger);
+  box-shadow: 0 0 6px var(--danger);
 }
 
 .status-badge.status-loading .status-dot {
   background: var(--warn);
-  animation: pulseDot 1.2s infinite;
-}
-
-@keyframes pulseDot {
-
-  0%,
-  100% {
-    opacity: 1
-  }
-
-  50% {
-    opacity: .25
-  }
+  animation: pulseDot 1s infinite;
 }
 
 /* Form controls */
@@ -465,19 +488,19 @@ select.form-control {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: .4rem;
-  padding: .48rem .95rem;
+  gap: .5rem;
+  padding: .68rem 1.2rem;
   border-radius: var(--radius-sm);
   font-family: inherit;
-  font-size: .74rem;
+  font-size: .76rem;
   font-weight: 700;
-  letter-spacing: .04em;
+  letter-spacing: .06em;
   text-transform: uppercase;
   cursor: pointer;
   transition: all var(--transition);
   border: none;
   white-space: nowrap;
-  line-height: 1;
+  line-height: 1.2;
   touch-action: manipulation;
   position: relative;
   overflow: hidden;
@@ -513,18 +536,24 @@ select.form-control {
   background: var(--bg-raised);
   color: var(--text-primary);
   border: 1px solid var(--border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-secondary:not(:disabled):hover {
   border-color: var(--accent);
   color: var(--accent-hover);
   background: var(--accent-dim);
+  box-shadow: 0 0 15px rgba(118, 185, 0, 0.15);
+  transform: translateY(-1px);
 }
+
+/* Styles moved to end of file */
 
 .btn-ghost {
   background: transparent;
   color: var(--text-secondary);
   border: 1px solid var(--border);
+  padding: 0.75rem 1.2rem;
 }
 
 .btn-ghost:not(:disabled):hover {
@@ -1977,4 +2006,50 @@ select.form-control {
   to {
     transform: rotate(360deg)
   }
+}
+
+/* ── Primary Action Button (Ollama Start) ─────────────────────────── */
+#btnStartOllama {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  background-color: var(--accent) !important;
+  border: 1px solid var(--accent) !important;
+  color: #000 !important;
+  box-shadow: 0 4px 20px rgba(118, 185, 0, 0.4) !important;
+  border-radius: var(--radius) !important;
+  padding: 0.6rem 1.5rem !important;
+  min-height: 48px !important;
+  margin: 1.5rem auto 0.8rem auto !important;
+  animation: pulsePrimary 2s infinite !important;
+  cursor: pointer !important;
+  width: 90% !important;
+  z-index: 10 !important;
+}
+
+#btnStartOllama:hover {
+  background-color: var(--accent-hover) !important;
+  box-shadow: 0 8px 32px rgba(118, 185, 0, 0.6) !important;
+  transform: translateY(-2px) !important;
+}
+
+@keyframes pulsePrimary {
+  0% {
+    box-shadow: 0 0 0 0 rgba(118, 185, 0, 0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(118, 185, 0, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(118, 185, 0, 0);
+  }
+}
+
+#startOllamaHint {
+  margin-top: 0.5rem !important;
+  padding: 0 0.25rem !important;
 }

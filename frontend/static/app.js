@@ -39,6 +39,7 @@ const ollamaEndpointInput = $('ollamaEndpoint');
 const ollamaStatus = $('ollamaStatus');
 const ollamaStatusText = $('ollamaStatusText');
 const btnStartOllama = $('btnStartOllama');
+const railStartOllama = $('railStartOllama');
 const startOllamaHint = $('startOllamaHint');
 const modelSelect = $('modelSelect');
 const connectionBadge = $('connectionBadge');
@@ -247,6 +248,10 @@ function expandSidebar() {
 if (sidebarCollapseBtn) sidebarCollapseBtn.addEventListener('click', collapseSidebar);
 if (sidebarExpandBtn) sidebarExpandBtn.addEventListener('click', expandSidebar);
 
+if (railStartOllama) {
+  railStartOllama.addEventListener('click', () => btnStartOllama.click());
+}
+
 if (railClearBtn) { railClearBtn.addEventListener('click', clearConversation); }
 
 function syncRailStatus() {
@@ -306,23 +311,39 @@ async function refreshHealth() {
   const endpoint = getOllamaEndpoint();
   const isLocal = endpoint.includes('localhost') || endpoint.includes('127.0.0.1');
 
-  // Direct browser check — no backend proxy needed
+  // Set loading state briefly if we were offline
+  if (!state.ollamaRunning) {
+    ollamaStatus.className = 'status-badge status-loading';
+    ollamaStatusText.textContent = 'Checking Connection…';
+  }
+
   const { running, models } = await checkOllamaDirectly(endpoint);
+
+  // Update state
+  const changed = state.ollamaRunning !== running;
   state.ollamaRunning = running;
   state.models = models;
 
   if (running) {
     ollamaStatus.className = 'status-badge status-online';
-    ollamaStatusText.textContent = isLocal ? 'Ollama — Running (local)' : 'Ollama — Connected (remote)';
-    btnStartOllama.style.display = 'none';
-    if (startOllamaHint) startOllamaHint.style.display = 'none';
-    connectionBadge.textContent = isLocal ? 'LOCAL / SECURE' : 'TUNNELLED / SECURE';
-    connectionBadge.style.color = isLocal ? 'var(--accent)' : 'var(--info)';
-    connectionBadge.style.borderColor = isLocal ? 'var(--accent-border)' : 'rgba(96,165,250,0.35)';
-    connectionBadge.style.background = isLocal ? 'var(--accent-dim)' : 'rgba(96,165,250,0.10)';
+    ollamaStatusText.textContent = isLocal ? 'Ollama — Running' : 'Ollama — Connected';
 
-    // Populate model selector
+    // Hide start buttons
+    btnStartOllama.style.display = 'none';
+    if (railStartOllama) railStartOllama.style.display = 'none';
+    if (startOllamaHint) startOllamaHint.style.display = 'none';
+
+    // Update badge in header
+    connectionBadge.textContent = isLocal ? 'LOCAL / SECURE' : 'REMOTE / TUNNEL';
+    connectionBadge.style.filter = 'drop-shadow(0 0 5px var(--accent))';
+    connectionBadge.style.color = 'var(--accent-hover)';
+    connectionBadge.style.borderColor = 'var(--accent-border)';
+    connectionBadge.style.background = 'var(--accent-dim)';
+
+    // Update model list
+    const currentModel = modelSelect.value;
     modelSelect.innerHTML = '';
+
     if (models.length === 0) {
       const opt = document.createElement('option');
       opt.value = ''; opt.textContent = 'No models found'; opt.disabled = true; opt.selected = true;
@@ -331,20 +352,31 @@ async function refreshHealth() {
       models.forEach(m => {
         const opt = document.createElement('option');
         opt.value = m; opt.textContent = m;
+        if (m === currentModel) opt.selected = true;
         modelSelect.appendChild(opt);
       });
+      // If gemma3 exists but isn't selected, maybe select it? 
+      // User manual choice is better, but let's ensure something is selected.
+      if (!modelSelect.value && models.length > 0) modelSelect.selectedIndex = 0;
     }
+
+    if (changed) toast('Ollama connection established.', 'success');
   } else {
     ollamaStatus.className = 'status-badge status-offline';
     ollamaStatusText.textContent = isLocal ? 'Ollama — Not running' : 'Ollama — Unreachable';
-    btnStartOllama.style.display = 'block';
+
+    btnStartOllama.style.display = 'flex';
+    if (railStartOllama) railStartOllama.style.display = 'flex';
+
     if (startOllamaHint) {
       startOllamaHint.style.display = 'block';
       startOllamaHint.textContent = isLocal
-        ? 'Click to see how to start Ollama on your computer.'
-        : 'Remote endpoint unreachable. Check the URL or set up a tunnel.';
+        ? 'Ollama is offline. Click above to try starting it.'
+        : 'Remote server unreachable. Check URL or tunnel.';
     }
-    connectionBadge.textContent = 'DISCONNECTED';
+
+    connectionBadge.textContent = 'OFFLINE';
+    connectionBadge.style.filter = 'none';
     connectionBadge.style.color = '';
     connectionBadge.style.borderColor = '';
     connectionBadge.style.background = '';
@@ -355,21 +387,58 @@ async function refreshHealth() {
 // ─── START OLLAMA — shows instructions & polls until Ollama comes online ─────
 // Browsers cannot spawn OS processes, so we show the command to run and
 // keep retrying until Ollama responds at the user's localhost.
-btnStartOllama.addEventListener('click', () => {
+btnStartOllama.addEventListener('click', async () => {
   const endpoint = getOllamaEndpoint();
   const isLocal = endpoint.includes('localhost') || endpoint.includes('127.0.0.1');
+
   if (!isLocal) {
     tunnelModal.style.display = 'flex';
     return;
   }
-  // Update the endpoint label in the modal
+
+  // Attempt to start via backend first
+  btnStartOllama.disabled = true;
+  if (railStartOllama) railStartOllama.classList.add('loading');
+  btnStartOllama.innerHTML = '<span class="btn-spinner"></span> Starting…';
+
+  try {
+    toast('Telling backend to start Ollama...', 'info');
+    const data = await apiFetch('/api/ollama/start', { method: 'POST' });
+    if (data.started) {
+      toast('Ollama starting! Waiting to connect...', 'success');
+      // Wait a moment for it to actually bind the port
+      setTimeout(async () => {
+        await refreshHealth();
+        if (state.ollamaRunning) {
+          btnStartOllama.disabled = false;
+          if (railStartOllama) railStartOllama.classList.remove('loading');
+          btnStartOllama.innerHTML = '🚀 LAUNCH OLLAMA';
+        } else {
+          // If still not running, show instructions modal
+          showOllamaStartModal(endpoint);
+        }
+      }, 1500);
+    }
+  } catch (e) {
+    console.warn('Backend start failed:', e);
+    // If backend fails (e.g. not on the same machine), show manual instructions
+    showOllamaStartModal(endpoint);
+  } finally {
+    // Reset button after a delay if modal didn't close
+    setTimeout(() => {
+      btnStartOllama.disabled = false;
+      if (railStartOllama) railStartOllama.classList.remove('loading');
+      btnStartOllama.innerHTML = '🚀 LAUNCH OLLAMA';
+    }, 3000);
+  }
+});
+
+function showOllamaStartModal(endpoint) {
   const epLabel = document.getElementById('ollamaStartModalEndpoint');
   if (epLabel) epLabel.textContent = endpoint;
-  // Show the "run ollama serve" instructions modal
   ollamaStartModal.style.display = 'flex';
-  // Begin polling so the UI updates automatically once user starts Ollama
   startOllamaPoller();
-});
+}
 
 // Poll every 2 s until Ollama comes online (called after modal is shown)
 let _ollamaPoller = null;
