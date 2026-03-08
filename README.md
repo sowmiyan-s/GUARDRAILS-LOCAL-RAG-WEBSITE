@@ -37,14 +37,7 @@
 
 ## Architecture
 
-```
-User browser → FastAPI (port 8000) → Tiered Safety Input Check
-                                    → LangChain History Retriever
-                                    → FAISS Vector Store (local disk)
-                                    → Ollama Local LLM
-                                    → Tiered Safety Output Check
-                                    → Response
-```
+![System Architecture](assets/architecture.svg)
 
 ---
 
